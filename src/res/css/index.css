@@ -1,0 +1,15 @@
+@import '~antd/dist/antd.css';
+
+body {
+    background: aliceblue;
+}
+
+.center {
+    text-align: center;
+    overflow: hidden;
+}
+
+.center-left {
+    display: flex;
+    align-items: center;
+}

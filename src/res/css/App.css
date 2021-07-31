@@ -1,0 +1,36 @@
+#content {
+  margin: 2ex auto;
+  max-width: 100ex;
+  min-width: 80ex;
+}
+
+.input-number {
+  margin: auto;
+  width: 90%;
+}
+
+.fade-enter {
+  opacity: 0.01;
+}
+
+.row-padding {
+  padding: 2ex 0;
+}
+
+.formula-row-padding {
+  padding: 0 0 14ex 0;
+}
+
+.fade-enter.fade-enter-active {
+  opacity: 1;
+  transition: opacity 500ms ease-in;
+}
+
+.fade-leave {
+  opacity: 1;
+}
+
+.fade-leave.fade-leave-active {
+  opacity: 0.01;
+  transition: opacity 300ms ease-in;
+}
