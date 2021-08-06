@@ -1,4 +1,5 @@
 import {FormulaNum} from "../FormulaNum";
+import {NormalNum} from "./NormalNum";
 
 export class FractionNum extends FormulaNum {
     // 分子
@@ -12,23 +13,27 @@ export class FractionNum extends FormulaNum {
         this.denominator = denominator
     }
 
-    public static rand(max: number, base: FractionNum|undefined = undefined, isDiv: boolean = false){
-        if (base === undefined){
-            return new FractionNum(
-                Math.ceil(Math.random() * max),
-                Math.ceil(Math.random() * max)
-            )
-        }
-        if (isDiv){
-            return new FractionNum(
-                Math.ceil(Math.random() * max) * base.numerator,
-                base.denominator
-            )
-        }
+    public getNumerator(): number {
+        return this.numerator;
+    }
+
+    public getDenominator(): number {
+        return this.denominator;
+    }
+
+    public times(times: NormalNum): FractionNum {
+        return FractionNum.create(this.numerator * times.num, this.denominator);
+    }
+
+    public static rand(max: number){
         return new FractionNum(
             Math.ceil(Math.random() * max),
-            base.denominator
+            Math.ceil(Math.random() * max)
         )
+    }
+
+    public static create(numerator: number, denominator: number): FractionNum {
+        return new FractionNum(numerator, denominator)
     }
 
     public isFraction(): boolean {

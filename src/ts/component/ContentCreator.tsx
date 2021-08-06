@@ -1,4 +1,4 @@
-import {Formulas} from "../module/Formulas";
+import {Formulas} from "../data/Formulas";
 import {Col, Row} from "antd";
 import React from "react";
 import {MathComponent} from "mathjax-react";

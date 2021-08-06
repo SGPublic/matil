@@ -1,4 +1,4 @@
-import {Formula} from "../data/Formula";
+import {Formula} from "../module/Formula";
 
 export class Formulas extends Array<Formula> {
     multiMap<U>(fn: (value: Formula[]) => U, size: number): U[] {

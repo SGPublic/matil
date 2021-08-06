@@ -8,12 +8,22 @@ export class NormalNum extends FormulaNum {
         this.num = num
     }
 
-    public static rand(max: number, min: number, base: NormalNum|undefined = undefined): NormalNum {
-        const num = Math.ceil(DecimalNum.rand(max, min).num)
-        if (base === undefined){
-            return new NormalNum(num)
-        }
-        return new NormalNum(num * base.num)
+    public getNumerator(): number {
+        return this.num;
+    }
+
+    public times(times: NormalNum): NormalNum {
+        return NormalNum.create(this.num * times.num);
+    }
+
+    public static rand(max: number, min: number): NormalNum {
+        return new NormalNum(Math.ceil(
+            DecimalNum.rand(max, min).num
+        ))
+    }
+
+    public static create(num: number): NormalNum {
+        return new NormalNum(num)
     }
 
     public toString(): string {

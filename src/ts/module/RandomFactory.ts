@@ -1,5 +1,5 @@
-import {Formula, FormulasOperator} from "../data/Formula";
-import {FormulaNum, NumberTypes} from "../data/FormulaNum";
+import {Formula, FormulasOperator} from "./Formula";
+import {FormulaNum, NumberType} from "../data/FormulaNum";
 import {DecimalNum} from "../data/numbers/DecimalNum";
 import {FractionNum} from "../data/numbers/FractionNum";
 import {NormalNum} from "../data/numbers/NormalNum";
@@ -10,110 +10,92 @@ export class RandomFactory {
     private readonly maxMulti: number = 99
     private readonly maxDiv: number = 99
 
-    private readonly allowOperators: Array<FormulasOperator> = []
-    private readonly allowNums: Array<NumberTypes> = ["normal"]
+    private readonly allowOperators: Array<FormulasOperator> = [Formula.OPER_ADD]
+    private readonly allowNums: Array<NumberType> = [Formula.NUM_NORMAL]
 
-    private readonly multiStep: boolean = false
-
-    private constructor(maxAddSub: number, minAddSub: number, maxMulti: number, maxDiv: number,
-                        allowDecimal: boolean, allowFraction: boolean, allowAdd: boolean,
-                        allowSub: boolean, allowMulti: boolean, allowDiv: boolean, multiStep: boolean) {
+    private constructor(maxAddSub: number, minAddSub: number, maxMulti: number,
+                        maxDiv: number, allowNums: Array<NumberType>,
+                        allowOperators: Array<FormulasOperator>, multiStep: boolean) {
         this.maxAddSub = maxAddSub
         this.minAddSub = minAddSub
         this.maxMulti = maxMulti
         this.maxDiv = maxDiv
-        if (allowDecimal){
-            this.allowNums.push("decimal")
+        this.allowNums = allowNums
+        this.allowOperators = allowOperators
+        if (multiStep) {
+            this.random = this.randomMulti
+        } else {
+            this.random = this.randomSimple
         }
-        if (allowFraction){
-            this.allowNums.push("fraction")
-        }
-        if (allowAdd){
-            this.allowOperators.push("+")
-        }
-        if (allowSub){
-            this.allowOperators.push("-")
-        }
-        if (allowMulti){
-            this.allowOperators.push("\\times")
-        }
-        if (allowDiv){
-            this.allowOperators.push("\\div")
-        }
-        this.multiStep = multiStep
     }
 
-    public random(): Formula {
-        const formula: Formula = this.singleRandom()
-        if (this.multiStep){
+    public readonly random: () => Formula
 
+    private randomSimple(): Formula {
+        const oper: FormulasOperator = this.randomOperator()
+        const num1: FormulaNum = this.randomSingleNum(oper)
+        const allowNums: Array<NumberType> = [Formula.NUM_NORMAL]
+        if (num1.isDecimal()){
+            allowNums.push(Formula.NUM_DECIMAL)
+        } else if (num1.isFraction()) {
+            allowNums.push(Formula.NUM_FRACTION)
         }
-        return formula
-    }
-
-    public singleRandom(baseFormula: Formula|undefined = undefined): Formula {
-        let result: Formula
-        let operator: FormulasOperator
-        if (baseFormula === undefined){
-            operator = this.randomOperator()
-            result = new Formula(this.randomSingleNum(operator))
+        let num2: FormulaNum
+        if (oper === Formula.OPER_DIV){
+            num2 = num1.times(NormalNum.rand(this.maxDiv, 1))
         } else {
-            operator = baseFormula.getOperator()!
-            result = baseFormula
+            num2 = this.randomSingleNum(oper, allowNums)
         }
-        const allowNums: Array<NumberTypes> = ["normal"]
-        if (result.hasFraction() && operator !== "\\div") {
-            allowNums.push("fraction")
-        }
-        const num2 = this.randomSingleNum(operator, allowNums, result.getBaseNum()!)
-        if (operator === "\\div"){
-            result.unshift(num2, operator)
+        let result: Formula = new Formula(num1)
+        if (oper === Formula.OPER_DIV || Math.random() < 0.5){
+            result.unshift(num2, oper)
         } else {
-            result.push(operator, num2)
+            result.push(oper, num2)
         }
         return result
     }
 
-    private randomOperator(): FormulasOperator {
-        return this.allowOperators[Math.floor(
-            Math.random() * this.allowOperators.length
+    // @ts-ignore
+    private randomMulti(): Formula {
+
+    }
+
+    private randomOperator(allows: Array<FormulasOperator> = this.allowOperators): FormulasOperator {
+        return allows[Math.floor(
+            Math.random() * allows.length
         )]
     }
 
-    private randomSingleNum(operator: FormulasOperator, allowNums: Array<NumberTypes> = this.allowNums,
-                            base: FormulaNum|undefined = undefined): FormulaNum {
-        const numType = allowNums[Math.floor(
-            Math.random() * this.allowNums.length
-        )]
+    private randomSingleNum(oper: FormulasOperator, allows: Array<NumberType> = this.allowNums): FormulaNum {
         let max: number
         let min: number = 1
-        if (operator === "+" || operator === "-"){
-            max = this.maxAddSub
-            min = this.minAddSub
-        } else if (operator === "\\times") {
-            max = this.maxMulti
-        } else if (base !== undefined){
-            if (base.isFraction()){
-                return FractionNum.rand(this.maxDiv, base as FractionNum, true)
-            } else if (base.isDecimal()) {
-                console.debug(base.toString())
-                console.debug(DecimalNum.rand(this.maxDiv, 1, base as DecimalNum).toString())
-                return DecimalNum.rand(this.maxDiv, 1, base as DecimalNum)
-            } else {
-                return NormalNum.rand(this.maxDiv, 1, base as NormalNum)
-            }
-        } else {
-            max = this.maxDiv
+        switch (oper) {
+            case Formula.OPER_ADD:
+            case Formula.OPER_SUB:
+                max = this.maxAddSub
+                min = this.minAddSub
+                break
+            case Formula.OPER_MULTI:
+                max = this.maxMulti
+                break
+            case Formula.OPER_DIV:
+                max = this.maxDiv
+                break
         }
-
-        switch (numType){
-            case "decimal":
-                return DecimalNum.rand(max, min)
-            case "fraction":
-                return FractionNum.rand(max, base === undefined ? undefined : (base as FractionNum))
-            default:
+        switch (RandomFactory.randomNumType(allows)) {
+            case Formula.NUM_NORMAL:
                 return NormalNum.rand(max, min)
+            case Formula.NUM_DECIMAL:
+                return DecimalNum.rand(max, min)
+            case Formula.NUM_FRACTION:
+                return FractionNum.rand(max)
         }
+    }
+
+    private static randomNumType(allows: Array<NumberType>): NumberType {
+        return allows[Math.floor(
+            Math.random() * allows.length
+        )]
     }
 
     public static Builder = class RandomFactoryBuilder {
@@ -121,13 +103,8 @@ export class RandomFactory {
         private minAddSub = 100
         private maxMulti = 99
         private maxDiv = 99
-        private allowDecimal = false
-        private allowFraction = false
-
-        private allowAdd = true
-        private allowSub = false
-        private allowMulti = false
-        private allowDiv = false
+        private allowOpers = new Array<FormulasOperator>()
+        private allowNums = new Array<NumberType>()
 
         private multiStep = false
 
@@ -151,33 +128,13 @@ export class RandomFactory {
             return this
         }
 
-        public isAllowDecimal(value: boolean): RandomFactoryBuilder {
-            this.allowDecimal = value
+        public setAllowOpers(allowOpers: Array<FormulasOperator>): RandomFactoryBuilder {
+            this.allowOpers = allowOpers
             return this
         }
 
-        public isAllowFraction(value: boolean): RandomFactoryBuilder {
-            this.allowFraction = value
-            return this
-        }
-
-        public isAllowAdd(value: boolean): RandomFactoryBuilder {
-            this.allowAdd = value
-            return this
-        }
-
-        public isAllowSub(value: boolean): RandomFactoryBuilder {
-            this.allowSub = value
-            return this
-        }
-
-        public isAllowMulti(value: boolean): RandomFactoryBuilder {
-            this.allowMulti = value
-            return this
-        }
-
-        public isAllowDiv(value: boolean): RandomFactoryBuilder {
-            this.allowDiv = value
+        public setAllowNums(allowNums: Array<NumberType>): RandomFactoryBuilder {
+            this.allowNums = allowNums
             return this
         }
 
@@ -187,8 +144,8 @@ export class RandomFactory {
         }
 
         public build(): RandomFactory {
-            return new RandomFactory(this.maxAddSub, this.minAddSub, this.maxMulti, this.maxDiv, this.allowDecimal,
-                this.allowFraction, this.allowAdd, this.allowSub, this.allowMulti, this.allowDiv, this.multiStep)
+            return new RandomFactory(this.maxAddSub, this.minAddSub, this.maxMulti,
+                this.maxDiv, this.allowNums, this.allowOpers, this.multiStep)
         }
     }
 }

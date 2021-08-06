@@ -2,51 +2,50 @@ import '../res/css/App.css';
 import React from "react";
 import {Button, Card, Checkbox, Col, InputNumber, Row} from "antd";
 import ReactToPrint from "react-to-print";
-import {Formulas} from "./module/Formulas";
+import {Formulas} from "./data/Formulas";
 import ContentCreator from "./component/ContentCreator";
 import {CheckboxChangeEventTarget} from "antd/lib/checkbox/Checkbox";
 import {RandomFactory} from "./module/RandomFactory";
+import {NumberType} from "./data/FormulaNum";
+import {Formula, FormulasOperator} from "./module/Formula";
 
 class App extends React.Component {
     state = {
         formulas: new Formulas(),
-        empty: "",
 
-        QUESTIONS_COUNT: 100,
+        count: 100,
 
-        MIN_NUM_ADD_SUB: 100,
-        MAX_NUM_ADD_SUB: 999,
-        MAX_NUM_MULTI: 100,
-        MAX_NUM_DIV: 100,
+        minAddSub: 100,
+        maxAddSub: 999,
+        maxMulti: 100,
+        maxDiv: 100,
 
-        ADDITION: true,
-        SUBTRACTION: false,
-        MULTIPLICATION: false,
-        DIVISION: false,
-        DECIMAL: false,
-        FRACTION: false,
-        MULTI_STEP: false
+        allowOpers: new Set<FormulasOperator>(),
+        allowNums: new Set<NumberType>(),
+
+        multiStep: false
     }
 
     private formulasElement: HTMLDivElement|null = null
-    private checkedCount: number = 1
+
+    componentDidMount() {
+        this.state.allowNums.add(Formula.NUM_NORMAL)
+        this.state.allowOpers.add(Formula.OPER_ADD)
+        this.forceUpdate()
+    }
 
     private createFormulas(){
         const formulas = new Formulas()
         const factory = new RandomFactory.Builder()
-            .setMaxAddSub(this.state.MAX_NUM_ADD_SUB)
-            .setMinAddSub(this.state.MIN_NUM_ADD_SUB)
-            .setMaxMulti(this.state.MAX_NUM_MULTI)
-            .setMaxDiv(this.state.MAX_NUM_DIV)
-            .isAllowAdd(this.state.ADDITION)
-            .isAllowSub(this.state.SUBTRACTION)
-            .isAllowMulti(this.state.MULTIPLICATION)
-            .isAllowDiv(this.state.DIVISION)
-            .isAllowDecimal(this.state.DECIMAL)
-            .isAllowFraction(this.state.FRACTION)
-            .isMultiStep(this.state.MULTI_STEP)
+            .setMaxAddSub(this.state.maxAddSub)
+            .setMinAddSub(this.state.minAddSub)
+            .setMaxMulti(this.state.maxMulti)
+            .setMaxDiv(this.state.maxDiv)
+            .setAllowOpers(Array.from(this.state.allowOpers))
+            .setAllowNums(Array.from(this.state.allowNums))
+            .isMultiStep(this.state.multiStep)
             .build()
-        while (formulas.length < this.state.QUESTIONS_COUNT){
+        while (formulas.length < this.state.count){
             formulas.push(factory.random())
         }
         this.setState({
@@ -62,26 +61,6 @@ class App extends React.Component {
         return this.state.formulas.length === 0
     }
 
-    private onCheck(target: CheckboxChangeEventTarget): Boolean {
-        if (target.checked){
-            this.checkedCount += 1
-            return true
-        } else if (this.checkedCount === 1){
-            return false
-        } else {
-            this.checkedCount -= 1
-            return true
-        }
-    }
-
-    private static checkValue(value: number|null|undefined): number {
-        if (value === null || value === undefined){
-            return 0
-        } else {
-            return  value
-        }
-    }
-
     render() {
         const thisApp = this
         return (
@@ -92,104 +71,95 @@ class App extends React.Component {
                         <Row className={"row-padding"}>
                             <Col span={8} className={"center-left"}>题目数量</Col>
                             <Col span={16} className={"center-left"}>
-                                <InputNumber defaultValue={this.state.QUESTIONS_COUNT as number} bordered={false} onChange={function (value) {
+                                <InputNumber defaultValue={this.state.count as number} bordered={false} onChange={function (value: number) {
+                                    if (value === null){
+                                        return
+                                    }
                                     thisApp.setState({
-                                        QUESTIONS_COUNT: App.checkValue(value)
+                                        count: App.checkValue(value)
                                     })
-                                }} className={"input-number"}/>
+                                }} className={"input-number"} type={"number"}/>
                             </Col>
                         </Row>
                         <Row className={"row-padding"}>
                             <Col span={4} className={"center-left"}>最小数字<br/>(加、减法)</Col>
                             <Col span={8} className={"center-left"}>
-                                <InputNumber defaultValue={this.state.MAX_NUM_ADD_SUB as number} bordered={false} onChange={function (value) {
+                                <InputNumber value={this.state.maxAddSub as number} bordered={false} onChange={function (value: number) {
+                                    if (value === null){
+                                        return
+                                    }
                                     thisApp.setState({
-                                        MAX_NUM_ADD_SUB: App.checkValue(value)
+                                        maxAddSub: App.checkValue(value)
                                     })
-                                }} className={"input-number"}/>
+                                }} className={"input-number"} type={"number"}/>
                             </Col>
                             <Col span={4} className={"center-left"}>最大数字<br/>(加、减法)</Col>
                             <Col span={8} className={"center-left"}>
-                                <InputNumber defaultValue={this.state.MIN_NUM_ADD_SUB as number} bordered={false} onChange={function (value) {
+                                <InputNumber value={this.state.minAddSub as number} bordered={false} onChange={function (value: number) {
+                                    if (value === null){
+                                        return
+                                    }
                                     thisApp.setState({
-                                        MIN_NUM_ADD_SUB: App.checkValue(value)
+                                        minAddSub: App.checkValue(value)
                                     })
-                                }} className={"input-number"}/>
+                                }} className={"input-number"} type={"number"}/>
                             </Col>
                         </Row>
                         <Row className={"row-padding"}>
                             <Col span={4} className={"center-left"}>乘法范围<br/>(乘数/被乘数)</Col>
                             <Col span={8} className={"center-left"}>
-                                <InputNumber defaultValue={this.state.MAX_NUM_MULTI as number} bordered={false} onChange={function (value) {
+                                <InputNumber value={this.state.maxMulti as number} bordered={false} onChange={function (value: number) {
+                                    if (value === null){
+                                        return
+                                    }
                                     thisApp.setState({
-                                        MAX_NUM_MULTI: App.checkValue(value)
+                                        maxMulti: App.checkValue(value)
                                     })
-                                }} className={"input-number"}/>
+                                }} className={"input-number"} type={"number"}/>
                             </Col>
                             <Col span={4} className={"center-left"}>除法范围<br/>(除数/结果)</Col>
                             <Col span={8} className={"center-left"}>
-                                <InputNumber defaultValue={this.state.MAX_NUM_DIV as number} bordered={false} onChange={function (value) {
+                                <InputNumber value={this.state.maxDiv as number} bordered={false} onChange={function (value: number) {
+                                    if (value === null){
+                                        return
+                                    }
                                     thisApp.setState({
-                                        MAX_NUM_DIV: App.checkValue(value)
+                                        maxDiv: App.checkValue(value)
                                     })
-                                }} className={"input-number"}/>
+                                }} className={"input-number"} type={"number"}/>
                             </Col>
                         </Row>
                         <Row className={"row-padding"}>
                             <Col span={8} className={"center-left"}>算法</Col>
                             <Col span={16} className={"center-left"}>
                                 <Checkbox onChange={function (event) {
-                                    if (!thisApp.onCheck(event.target)){
-                                        return
-                                    }
-                                    thisApp.setState({
-                                        ADDITION: event.target.checked
-                                    })
-                                }} defaultChecked={true} checked={this.state.ADDITION}>加法</Checkbox>
+                                    thisApp.onChangeOper(event.target, Formula.OPER_ADD)
+                                }} checked={this.hasOper(Formula.OPER_ADD)}>加法</Checkbox>
                                 <Checkbox onChange={function (event) {
-                                    if (!thisApp.onCheck(event.target)){
-                                        return
-                                    }
-                                    thisApp.setState({
-                                        SUBTRACTION: event.target.checked
-                                    })
-                                }} checked={this.state.SUBTRACTION}>减法</Checkbox>
+                                    thisApp.onChangeOper(event.target, Formula.OPER_SUB)
+                                }} checked={this.hasOper(Formula.OPER_SUB)}>减法</Checkbox>
                                 <Checkbox onChange={function (event) {
-                                    if (!thisApp.onCheck(event.target)){
-                                        return
-                                    }
-                                    thisApp.setState({
-                                        MULTIPLICATION: event.target.checked
-                                    })
-                                }} checked={this.state.MULTIPLICATION}>乘法</Checkbox>
+                                    thisApp.onChangeOper(event.target, Formula.OPER_MULTI)
+                                }} checked={this.hasOper(Formula.OPER_MULTI)}>乘法</Checkbox>
                                 <Checkbox onChange={function (event) {
-                                    if (!thisApp.onCheck(event.target)){
-                                        return
-                                    }
-                                    thisApp.setState({
-                                        DIVISION: event.target.checked
-                                    })
-                                }} checked={this.state.DIVISION}>除法</Checkbox>
+                                    thisApp.onChangeOper(event.target, Formula.OPER_DIV)
+                                }} checked={this.hasOper(Formula.OPER_DIV)}>除法</Checkbox>
                             </Col>
                         </Row>
                         <Row className={"row-padding"}>
                             <Col span={8} className={"center-left"}>其他</Col>
                             <Col span={16} className={"center-left"}>
                                 <Checkbox onChange={function (event) {
-                                    thisApp.setState({
-                                        DECIMAL: event.target.checked
-                                    })
-                                }} checked={this.state.DECIMAL}>允许小数</Checkbox>
+                                    thisApp.onChangeNum(event.target, Formula.NUM_DECIMAL)
+                                }} checked={this.hasNum(Formula.NUM_DECIMAL)}>允许小数</Checkbox>
+                                <Checkbox onChange={function (event) {
+                                    thisApp.onChangeNum(event.target, Formula.NUM_FRACTION)
+                                }} checked={this.hasNum(Formula.NUM_FRACTION)}>允许分数</Checkbox>
                                 <Checkbox onChange={function (event) {
                                     thisApp.setState({
-                                        FRACTION: event.target.checked
+                                        multiStep: event.target.checked
                                     })
-                                }} checked={this.state.FRACTION}>允许分数</Checkbox>
-                                <Checkbox onChange={function (event) {
-                                    thisApp.setState({
-                                        MULTI_STEP: event.target.checked
-                                    })
-                                }} checked={this.state.MULTI_STEP} disabled={true}>多步骤</Checkbox>
+                                }} checked={this.state.multiStep} disabled={true}>多步骤</Checkbox>
                             </Col>
                         </Row>
                         <Row style={{padding: "2ex 5ex"}} gutter={48}>
@@ -214,11 +184,45 @@ class App extends React.Component {
                 </Card>
                 <div ref={function (el) {thisApp.formulasElement = el}}>
                     <Card id={"table-content"} style={{margin: "3ex 0"}}>
-                        <ContentCreator formulas={this.state.formulas} isMultiStep={this.state.MULTI_STEP}/>
+                        <ContentCreator formulas={this.state.formulas} isMultiStep={this.state.multiStep}/>
                     </Card>
                 </div>
             </div>
         )
+    }
+
+    private onChangeOper(target: CheckboxChangeEventTarget, oper: FormulasOperator){
+        if (target.checked){
+            this.state.allowOpers.add(oper)
+        } else if (this.state.allowOpers.size > 1) {
+            this.state.allowOpers.delete(oper)
+        }
+        this.forceUpdate()
+    }
+
+    private onChangeNum(target: CheckboxChangeEventTarget, num: NumberType){
+        if (target.checked){
+            this.state.allowNums.add(num)
+        } else {
+            this.state.allowNums.delete(num)
+        }
+        this.forceUpdate()
+    }
+
+    private static checkValue(value: number|null|undefined): number {
+        if (value === null || value === undefined){
+            return 0
+        } else {
+            return  value
+        }
+    }
+
+    private hasOper(oper: FormulasOperator): boolean {
+        return this.state.allowOpers.has(oper)
+    }
+
+    private hasNum(num: NumberType): boolean {
+        return this.state.allowNums.has(num)
     }
 }
 

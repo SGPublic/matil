@@ -1,22 +1,34 @@
 import {FormulaNum} from "../FormulaNum";
+import {NormalNum} from "./NormalNum";
 
 export class DecimalNum extends FormulaNum {
     public readonly num: number
+
     private constructor(num: number) {
         super()
-        this.num = Math.ceil(num * 100) / 100
+        this.num = parseFloat(num.toFixed(2))
+    }
+
+    public getNumerator(): number {
+        return this.num;
     }
 
     public isDecimal(): boolean {
         return true;
     }
 
-    public static rand(max: number, min: number, base: DecimalNum|undefined = undefined): DecimalNum {
-        const num = Math.random() * (max - min) + min
-        if (base === undefined){
-            return new DecimalNum(num)
-        }
-        return new DecimalNum(base.num * Math.ceil(num))
+    public times(times: NormalNum): DecimalNum {
+        return DecimalNum.create(this.num * times.num);
+    }
+
+    public static rand(max: number, min: number): DecimalNum {
+        return new DecimalNum(
+            Math.random() * (max - min) + min
+        )
+    }
+
+    public static create(num: number): DecimalNum {
+        return new DecimalNum(num)
     }
 
     public toString(): string {
