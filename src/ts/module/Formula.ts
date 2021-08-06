@@ -31,45 +31,22 @@ export class Formula {
     }
 
     public push(operator: FormulasOperator, num2: FormulaNum): Formula {
-        this.baseOperator = operator
-        switch (operator) {
-            case "+":
-                this.result += num2.getNumerator()
-                break
-            case "-":
-                this.result -= num2.getNumerator()
-                break
-            case "\\times":
-                this.result *= num2.getNumerator()
-                break
-        }
-        this.judgeNum(num2)
+        this.judgeNum(num2, operator)
         this.markdown = this.markdown.concat(" ")
             .concat(operator.toString(), " ")
             .concat(num2.toString())
-        this.length += 1
         return this
     }
 
     public unshift(num1: FormulaNum, operator: FormulasOperator): Formula {
-        this.baseOperator = operator
-        switch (operator) {
-            case "-":
-                this.result = num1.getNumerator() - this.result
-                break
-            case "\\div":
-                this.result = num1.getNumerator() / this.result
-                break
-        }
-        this.judgeNum(num1)
+        this.judgeNum(num1, operator)
         this.markdown = num1.toString().concat(" ")
             .concat(operator.toString(), " ")
             .concat(this.markdown)
-        this.length += 1
         return this
     }
 
-    private judgeNum(num: FormulaNum){
+    private judgeNum(num: FormulaNum, operator: FormulasOperator|undefined = undefined){
         if (num.isDecimal()){
             this.decimal = true
         }
@@ -77,6 +54,25 @@ export class Formula {
             this.fraction = true
             this.denominator = (num as FractionNum).denominator
         }
+        if (operator === undefined){
+            return
+        }
+        this.baseOperator = operator
+        switch (operator) {
+            case "+":
+                this.result += num.getNumerator()
+                break
+            case "-":
+                this.result = num.getNumerator() - this.result
+                break
+            case "\\div":
+                this.result = num.getNumerator() / this.result
+                break
+            case "\\times":
+                this.result *= num.getNumerator()
+                break
+        }
+        this.length += 1
     }
 
     public hasDecimal(): boolean {

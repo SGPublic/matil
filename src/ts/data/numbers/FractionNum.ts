@@ -22,7 +22,7 @@ export class FractionNum extends FormulaNum {
     }
 
     public times(times: NormalNum): FractionNum {
-        return FractionNum.create(this.numerator * times.num, this.denominator);
+        return FractionNum.create(this.numerator * times.getNumerator(), this.denominator);
     }
 
     public static rand(max: number){

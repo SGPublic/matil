@@ -18,7 +18,7 @@ export class DecimalNum extends FormulaNum {
     }
 
     public times(times: NormalNum): DecimalNum {
-        return DecimalNum.create(this.num * times.num);
+        return DecimalNum.create(this.num * times.getNumerator());
     }
 
     public static rand(max: number, min: number): DecimalNum {

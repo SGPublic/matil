@@ -33,7 +33,7 @@ export class RandomFactory {
 
     private randomSimple(): Formula {
         const oper: FormulasOperator = this.randomOperator()
-        const num1: FormulaNum = this.randomSingleNum(oper)
+        let num1: FormulaNum = this.randomSingleNum(oper)
         const allowNums: Array<NumberType> = [Formula.NUM_NORMAL]
         if (num1.isDecimal()){
             allowNums.push(Formula.NUM_DECIMAL)
@@ -42,7 +42,19 @@ export class RandomFactory {
         }
         let num2: FormulaNum
         if (oper === Formula.OPER_DIV){
-            num2 = num1.times(NormalNum.rand(this.maxDiv, 1))
+            if (num1.isFraction() && Math.random() < 0.5){
+                num1 = NormalNum.rand(this.maxDiv, 1)
+                num2 = FractionNum.create(
+                    NormalNum.rand(this.maxDiv, 1).getNumerator() * num1.getNumerator(),
+                    NormalNum.rand(this.maxDiv, 1).getNumerator()
+                )
+            } else {
+                num2 = num1.times(NormalNum.rand(this.maxDiv, 1))
+            }
+        } else if (num1.isFraction()) {
+            num2 = FractionNum.create(this.randomSingleNum(
+                oper, [Formula.NUM_NORMAL]
+            ).getNumerator(), num1.getDenominator())
         } else {
             num2 = this.randomSingleNum(oper, allowNums)
         }
@@ -55,9 +67,62 @@ export class RandomFactory {
         return result
     }
 
-    // @ts-ignore
     private randomMulti(): Formula {
+        let allowOper: Set<FormulasOperator> = new Set<FormulasOperator>(this.allowOperators)
+        let result: Formula = this.randomSimple()
+        switch (result.getOperator()) {
+            case Formula.OPER_ADD:
+            case Formula.OPER_SUB:
+                allowOper.delete(Formula.OPER_MULTI)
+                allowOper.delete(Formula.OPER_DIV)
+        }
+        let allowNum: Set<NumberType> = new Set<NumberType>(this.allowNums)
+        if (result.hasFraction()){
+            allowNum.delete(Formula.NUM_DECIMAL)
+        } else if (result.hasDecimal()) {
+            allowNum.delete(Formula.NUM_FRACTION)
+        }
+        const oper2: FormulasOperator = this.randomOperator(Array.from(allowOper))
+        let num3: FormulaNum
+        if (result.hasFraction()){
+            num3 = FractionNum.create(this.randomSingleNum(
+                oper2, [Formula.NUM_NORMAL]
+            ).getDenominator(), result.getDenominator()!)
+        } else {
+            num3 = this.randomSingleNum(oper2, Array.from(allowNum))
+        }
+        switch (true){
+            case oper2 === Formula.OPER_DIV:
+            case result.getOperator() === Formula.OPER_DIV:
+                result = this.randomTripleDiv()
+                break
+            case Math.random() < 0.5:
+                result.unshift(num3, oper2)
+                break
+            default:
+                result.push(oper2, num3)
+        }
+        return result
+    }
 
+    private randomTripleDiv(): Formula {
+        let nums: Array<FormulaNum> = [
+            NormalNum.rand(this.maxDiv, 1)
+        ]
+        nums.unshift(nums[0].times(NormalNum.rand(this.maxDiv, 1)))
+        nums.unshift(nums[0].times(NormalNum.rand(this.maxDiv, 1)))
+        const random: Array<string> = Math.round(Math.random() * 6)
+            .toString(2).split("")
+        const den: NormalNum = NormalNum.rand(this.maxDiv, 1)
+        for (let i = 0; i < random.length; i++) {
+            if (random[i] !== "1"){
+                continue
+            }
+            nums[i] = FractionNum.create(nums[i].getNumerator(), den.getNumerator())
+        }
+        return new Formula(nums[0])
+            .push(Formula.OPER_DIV, nums[1])
+            .push(Formula.OPER_DIV, nums[2])
     }
 
     private randomOperator(allows: Array<FormulasOperator> = this.allowOperators): FormulasOperator {

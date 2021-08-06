@@ -2,7 +2,7 @@ import {FormulaNum} from "../FormulaNum";
 import {DecimalNum} from "./DecimalNum";
 
 export class NormalNum extends FormulaNum {
-    public readonly num: number
+    private readonly num: number
     private constructor(num: number) {
         super()
         this.num = num

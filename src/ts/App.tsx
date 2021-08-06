@@ -156,10 +156,8 @@ class App extends React.Component {
                                     thisApp.onChangeNum(event.target, Formula.NUM_FRACTION)
                                 }} checked={this.hasNum(Formula.NUM_FRACTION)}>允许分数</Checkbox>
                                 <Checkbox onChange={function (event) {
-                                    thisApp.setState({
-                                        multiStep: event.target.checked
-                                    })
-                                }} checked={this.state.multiStep} disabled={true}>多步骤</Checkbox>
+                                    thisApp.state.multiStep = event.target.checked
+                                }} disabled={false}>多步骤</Checkbox>
                             </Col>
                         </Row>
                         <Row style={{padding: "2ex 5ex"}} gutter={48}>
